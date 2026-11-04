@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jelajahi Kampanye — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:56px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Explore Campaigns</div>
+      <h2>Jelajahi Kampanye Lingkungan</h2>
+      <p>Temukan dan dukung kampanye yang sedang berjalan di seluruh Indonesia.</p>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:30px">
+      <input id="q" type="search" placeholder="Cari kampanye…" style="flex:1;min-width:220px;padding:12px 16px;border:1.5px solid var(--line);border-radius:12px">
+      <select id="cat" style="padding:12px 14px;border:1.5px solid var(--line);border-radius:12px">
+        <option>Semua</option><option>Reforestation</option><option>Waste Management</option><option>Plastic Reduction</option>
+        <option>Ocean Conservation</option><option>Clean Energy</option><option>Biodiversity</option><option>Water Conservation</option><option>Sustainable Living</option>
+      </select>
+      <select id="sort" style="padding:12px 14px;border:1.5px solid var(--line);border-radius:12px">
+        <option value="">Urutan: Terbaru</option><option value="progress">Progres Tertinggi</option><option value="relawan">Relawan Terbanyak</option>
+      </select>
+    </div>
+    <div class="grid grid-3" id="list"></div>
+    <div id="empty" style="display:none;text-align:center;padding:60px 0;color:var(--mut)">
+      <p style="font-weight:700">Belum ada kampanye yang cocok.</p><p style="font-size:.9rem">Coba kata kunci atau kategori lain.</p>
+    </div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('kampanye');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+const qs=new URLSearchParams(location.search);
+document.getElementById('cat').value=qs.get('kategori')||'Semua';
+async function load(){
+  const p=new URLSearchParams({kategori:document.getElementById('cat').value,q:document.getElementById('q').value,sort:document.getElementById('sort').value});
+  const d=await GA.api('/campaigns?'+p);
+  const el=document.getElementById('list');
+  document.getElementById('empty').style.display=d.items.length?'none':'block';
+  el.innerHTML=d.items.map(c=>{
+    const pct=Math.round(c.progress/c.target*100);
+    const saved=GA._saved&&GA._saved.includes('campaign:'+c.id);
+    return `<article class="card">
+      <img class="thumb" src="${c.foto}" alt="${GA.esc(c.judul)}" loading="lazy">
+      <div class="body">
+        <div style="display:flex;justify-content:space-between"><span class="tag green">${GA.esc(c.kategori)}</span>
+        <button class="btn btn-sm" style="border:none;background:none;color:${saved?'var(--green)':'var(--mut)'}" onclick="toggleSave('${c.id}')" aria-label="Simpan">${saved?'♥':'♡'}</button></div>
+        <h3 style="margin-top:10px">${GA.esc(c.judul)}</h3>
+        <p class="desc">${GA.esc(c.deskripsi.slice(0,120))}…</p>
+        <div class="progress"><i style="width:${pct}%"></i></div>
+        <div class="progress-lbl"><span>${GA.fmt(c.progress)} / ${GA.fmt(c.target)}</span><span>${pct}%</span></div>
+        <div class="meta"><span>📍 ${GA.esc(c.lokasi)}</span><span>👥 ${GA.fmt(c.relawan)}</span><span>⏳ ${GA.esc(c.tenggat)}</span></div>
+        <div class="foot"><a class="btn btn-primary btn-sm" href="/kampanye/${c.id}">Detail</a><span class="tag">${c.status}</span></div>
+      </div>
+    </article>`;}).join('');
+}
+['q','cat','sort'].forEach(id=>{
+  document.getElementById(id).addEventListener(id==='q'?'input':'change',load);
+});
+async function initSaved(){
+  if(GA.getToken()){ const d=await GA.api('/my/saved'); GA._saved=d.keys||[]; } else GA._saved=[];
+  load();
+}
+async function toggleSave(id){
+  if(!GA.requireLogin())return;
+  const d=await GA.api('/saved/toggle',{method:'POST',body:JSON.stringify({type:'campaign',id})});
+  if(d.saved){ GA._saved.push('campaign:'+id); GA.toast('Disimpan ke daftarmu ♥'); } else { GA._saved=GA._saved.filter(k=>k!=='campaign:'+id); GA.toast('Dihapus dari daftar'); }
+  load();
+}
+initSaved();
+</script>
+</body>
+</html>

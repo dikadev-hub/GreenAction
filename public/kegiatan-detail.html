@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="t">Detail Kegiatan — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div class="container" style="padding-top:48px" id="wrap"><div class="skeleton" style="height:380px;border-radius:20px"></div></div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('kegiatan');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+const id=location.pathname.split('/').pop();
+GA.api('/activities/'+id).then(d=>{
+  if(!d.success){ document.getElementById('wrap').innerHTML='<p style="padding:60px 0;color:var(--mut)">Kegiatan tidak ditemukan. <a href="/kegiatan" style="color:var(--green);font-weight:700">Kembali →</a></p>'; return; }
+  const a=d.item;
+  document.getElementById('t').textContent=a.judul+' — GreenAction';
+  document.getElementById('wrap').innerHTML=`
+  <a href="/kegiatan" style="color:var(--mut);font-size:.9rem;font-weight:600">← Semua kegiatan</a>
+  <div class="split" style="margin-top:22px">
+    <img src="${a.foto}" alt="${GA.esc(a.judul)}">
+    <div>
+      <span class="tag blue">${GA.esc(a.jenis)}</span> <span class="tag">${a.status}</span>
+      <h1 style="font-size:1.9rem;color:var(--deep);margin:14px 0">${GA.esc(a.judul)}</h1>
+      <p style="color:var(--mut)">${GA.esc(a.deskripsi)}</p>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px;margin:24px 0">
+        <div class="panel" style="margin:0;padding:16px"><b>📅 ${a.tanggal}</b><div style="font-size:.8rem;color:var(--mut)">Tanggal</div></div>
+        <div class="panel" style="margin:0;padding:16px"><b>📍 ${GA.esc(a.lokasi)}</b><div style="font-size:.8rem;color:var(--mut)">Lokasi</div></div>
+        <div class="panel" style="margin:0;padding:16px"><b>${GA.fmt(a.terisi)} / ${GA.fmt(a.kuota)}</b><div style="font-size:.8rem;color:var(--mut)">Peserta terdaftar</div></div>
+        <div class="panel" style="margin:0;padding:16px"><b>🏅 +${a.poin} poin</b><div style="font-size:.8rem;color:var(--mut)">Reward kontribusi</div></div>
+      </div>
+      <p style="font-size:.85rem;color:var(--mut)">Diselenggarakan oleh <b>${GA.esc(a.komunitas)}</b></p>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="joinAct('${a.id}')">Daftar Jadi Peserta</button>
+    </div>
+  </div>`;
+});
+async function joinAct(aid){
+  if(!GA.requireLogin())return;
+  const d=await GA.api('/join',{method:'POST',body:JSON.stringify({type:'activity',id:aid})});
+  GA.toast(d.success?'Pendaftaran terkirim — status: '+d.status:(d.message||'Gagal'));
+}
+</script>
+</body>
+</html>

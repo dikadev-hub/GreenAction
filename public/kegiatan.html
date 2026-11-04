@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kegiatan Relawan — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:56px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Environmental Activities</div>
+      <h2>Kegiatan Lingkungan Terdekat</h2>
+      <p>Ikuti kegiatan nyata: tanam pohon, bersih sungai, beach cleanup, dan workshop edukasi.</p>
+    </div>
+    <div class="grid grid-3" id="list"></div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('kegiatan');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+GA.api('/activities').then(d=>{
+  document.getElementById('list').innerHTML=d.items.map(a=>{
+    const pct=Math.round(a.terisi/a.kuota*100);
+    const penuh=a.terisi>=a.kuota;
+    return `<article class="card">
+      <img class="thumb" src="${a.foto}" alt="${GA.esc(a.judul)}" loading="lazy">
+      <div class="body">
+        <span class="tag blue">${GA.esc(a.jenis)}</span>
+        <h3 style="margin-top:10px">${GA.esc(a.judul)}</h3>
+        <p class="desc">${GA.esc(a.deskripsi.slice(0,110))}…</p>
+        <div class="progress"><i style="width:${Math.min(pct,100)}%"></i></div>
+        <div class="progress-lbl"><span>${GA.fmt(a.terisi)}/${GA.fmt(a.kuota)} peserta</span><span>${GA.esc(a.status)}</span></div>
+        <div class="meta"><span>📅 ${a.tanggal}</span><span>📍 ${GA.esc(a.lokasi)}</span></div>
+        <div class="meta"><span>🏅 +${a.poin} poin</span><span>${GA.esc(a.komunitas)}</span></div>
+        <div class="foot"><a class="btn btn-primary btn-sm" href="/kegiatan/${a.id}">Detail & Daftar</a></div>
+      </div>
+    </article>`;}).join('');
+});
+</script>
+</body>
+</html>

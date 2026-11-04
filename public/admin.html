@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="header"></div>
+<div class="container" style="padding:48px 0">
+  <h1 style="color:var(--deep);font-size:1.7rem">Admin Dashboard</h1>
+  <p style="color:var(--mut);margin-bottom:24px">Verifikasi laporan & kelola platform. Akses terbatas untuk role admin.</p>
+  <div id="denied" style="display:none" class="panel"><b>Akses ditolak.</b> Halaman ini hanya untuk admin.</div>
+  <div id="content" style="display:none">
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)" id="kpis"></div>
+    <div class="chart-grid" style="grid-template-columns:1fr 1fr">
+      <div class="chart-box"><h3>Pengguna Baru per Bulan</h3><canvas id="ch1" height="200"></canvas></div>
+      <div class="chart-box"><h3>Laporan per Status</h3><canvas id="ch2" height="200"></canvas></div>
+    </div>
+    <div class="panel" style="margin-top:24px"><h3>Antrian Verifikasi Laporan</h3><div id="queue"></div></div>
+    <div class="panel" style="margin-top:24px"><h3>Pendaftaran Kegiatan (Persetujuan)</h3><div id="pend"></div></div>
+    <div class="panel" style="margin-top:24px"><h3>Semua Pengguna</h3>
+      <table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th style="text-align:right">Poin</th></tr></thead><tbody id="users"></tbody></table>
+    </div>
+  </div>
+</div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+if(!GA.getToken()){ GA.toast('Masuk dulu sebagai admin'); location.href='/masuk'; throw ''; }
+(async()=>{
+  const d=await GA.api('/admin/data');
+  if(!d.success){ document.getElementById('denied').style.display='block'; return; }
+  document.getElementById('content').style.display='block';
+  const s=d.stats;
+  document.getElementById('kpis').innerHTML=[
+    ['Pengguna',s.users],['Laporan Masuk',s.reports],['Laporan Pending',s.pending],['Pendaftaran Pending',s.joins]
+  ].map(([l,v])=>`<div class="panel" style="margin:0"><b style="font-size:1.6rem;color:var(--deep)">${GA.fmt(v)}</b><div style="font-size:.85rem;color:var(--mut)">${l}</div></div>`).join('');
+  document.getElementById('queue').innerHTML=d.reports.length?d.reports.map(r=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:.92rem">
+      <div><b>${GA.esc(r.judul)}</b><div style="color:var(--mut);font-size:.78rem">${r.id} · ${GA.esc(r.kategori)} · ${GA.esc(r.lokasi)} · ${r.tanggal}</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge ${r.status.replace(' ','')}">${r.status}</span>
+        ${['Submitted','Under Review'].includes(r.status)?`
+        <button class="btn btn-sm btn-outline" onclick="setStatus('${r.id}','Under Review')">Review</button>
+        <button class="btn btn-sm btn-primary" onclick="setStatus('${r.id}','Verified')">Verify</button>
+        <button class="btn btn-sm btn-outline" style="color:#A33A32" onclick="setStatus('${r.id}','Rejected')">Tolak</button>`:''}
+      </div>
+    </div>`).join(''):'<p style="color:var(--mut);font-size:.9rem">Kosong.</p>';
+  document.getElementById('pend').innerHTML=d.joins.length?d.joins.map(j=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:.92rem">
+      <div><b>${GA.esc(j.title)}</b><div style="color:var(--mut);font-size:.78rem">oleh ${GA.esc(j.userName)} · ${(j.dibuat||'').slice(0,10)}</div></div>
+      <div style="display:flex;gap:8px;align-items:center"><span class="badge ${j.status}">${j.status}</span>
+      ${j.status==='Pending'?`<button class="btn btn-sm btn-primary" onclick="setJoin('${j.id}','Approved')">Setujui</button>
+      <button class="btn btn-sm btn-outline" style="color:#A33A32" onclick="setJoin('${j.id}','Rejected')">Tolak</button>`:''}</div>
+    </div>`).join(''):'<p style="color:var(--mut);font-size:.9rem">Kosong.</p>';
+  document.getElementById('users').innerHTML=d.users.map(u=>`
+    <tr><td><b>${GA.esc(u.nama)}</b></td><td>${GA.esc(u.email)}</td><td><span class="tag ${u.role==='admin'?'blue':''}">${u.role}</span></td><td style="text-align:right">${GA.fmt(u.poin||0)}</td></tr>`).join('');
+  new Chart(ch1,{type:'line',data:{labels:['Mei','Jun','Jul','Agu','Sep','Okt'],
+    datasets:[{data:[18,26,35,52,74,98],borderColor:'#237A50',backgroundColor:'rgba(35,122,80,.12)',fill:true,tension:.35}]},
+    options:{plugins:{legend:{display:false}}}});
+  new Chart(ch2,{type:'bar',data:{labels:['Submitted','Under Review','Verified','In Progress','Resolved','Rejected'],
+    datasets:[{data:d.byStatus,backgroundColor:['#8A6410','#2B4C8C','#237A50','#65A77B','#123C2B','#A33A32'],borderRadius:8}]},
+    options:{plugins:{legend:{display:false}}}});
+})();
+async function setStatus(id,st){ await GA.api('/admin/reports/'+id+'/status',{method:'POST',body:JSON.stringify({status:st})}); location.reload(); }
+async function setJoin(id,st){ await GA.api('/admin/joins/'+id+'/status',{method:'POST',body:JSON.stringify({status:st})}); location.reload(); }
+</script>
+</body>
+</html>

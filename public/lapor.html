@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporkan Isu Lingkungan — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:56px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Environmental Reporting</div>
+      <h2>Laporkan Masalah Lingkungan</h2>
+      <p>Laporanmu membantu tim verifikasi dan instansi terkait menindaklanjuti isu lingkungan. Identitas pelapor dilindungi.</p>
+    </div>
+    <div class="split" style="align-items:start">
+      <form class="form panel" id="reportForm" style="margin:0">
+        <div id="msg"></div>
+        <div class="field"><label for="judul">Judul laporan *</label><input id="judul" required maxlength="120" placeholder="Ringkas & jelas"></div>
+        <div class="field"><label for="kategori">Kategori *</label>
+          <select id="kategori" required>
+            <option>Sampah Menumpuk</option><option>Pencemaran Air</option><option>Kerusakan Ruang Hijau</option>
+            <option>Penebangan Pohon</option><option>Pencemaran Lainnya</option>
+          </select>
+        </div>
+        <div class="field"><label for="deskripsi">Deskripsi kejadian *</label><textarea id="deskripsi" rows="4" required maxlength="1000" placeholder="Jelaskan apa yang terjadi, kapan, dan dampaknya"></textarea></div>
+        <div class="form-row">
+          <div class="field"><label for="lokasi">Lokasi *</label><input id="lokasi" required placeholder="Kota/kabupaten & titik terdekat"></div>
+          <div class="field"><label for="tanggal">Tanggal kejadian</label><input id="tanggal" type="date"></div>
+        </div>
+        <div class="field"><label for="foto">Foto bukti (opsional, maks 2MB)</label><input id="foto" type="file" accept="image/jpeg,image/png"><div class="hint">Format JPG/PNG. Foto hanya digunakan untuk verifikasi.</div></div>
+        <button class="btn btn-primary" type="submit">Kirim Laporan</button>
+      </form>
+      <div>
+        <div class="panel"><h3>Alur Verifikasi</h3>
+          <ol style="padding-left:20px;color:var(--mut);font-size:.92rem;display:grid;gap:8px">
+            <li><b>Submitted</b> — laporan diterima sistem</li>
+            <li><b>Under Review</b> — tim verifikasi memeriksa</li>
+            <li><b>Verified</b> — laporan terverifikasi</li>
+            <li><b>In Progress</b> — ditindaklanjuti</li>
+            <li><b>Resolved / Rejected</b> — selesai atau ditolak</li>
+          </ol>
+        </div>
+        <div class="panel"><h3>Laporan Publik Terbaru</h3><div id="publicReports"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+let fotoB64='';
+document.getElementById('foto').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  if(f.size>2*1024*1024){ GA.toast('Foto maksimal 2MB'); e.target.value=''; return; }
+  const rd=new FileReader(); rd.onload=()=>{ fotoB64=rd.result; }; rd.readAsDataURL(f);
+});
+document.getElementById('reportForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const msg=document.getElementById('msg');
+  if(!GA.requireLogin())return;
+  const d=await GA.api('/reports',{method:'POST',body:JSON.stringify({
+    judul:judul.value, kategori:kategori.value, deskripsi:deskripsi.value,
+    lokasi:lokasi.value, tanggal:tanggal.value, foto:fotoB64
+  })});
+  if(d.success){ msg.innerHTML='<div class="form-ok">Laporan terkirim! ID: <b>'+d.item.id+'</b> — status: '+d.item.status+'</div>'; e.target.reset(); fotoB64=''; }
+  else msg.innerHTML='<div class="form-error">'+GA.esc(d.message||'Gagal mengirim')+'</div>';
+});
+GA.api('/reports').then(d=>{
+  document.getElementById('publicReports').innerHTML=d.items.slice(0,4).map(r=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+      <b style="font-size:.92rem">${GA.esc(r.judul)}</b>
+      <div style="font-size:.78rem;color:var(--mut);margin:4px 0">${GA.esc(r.kategori)} · ${GA.esc(r.lokasi)} · ${r.tanggal}</div>
+      <span class="badge ${r.status.replace(' ','')}">${r.status}</span>
+    </div>`).join('')||'<p style="color:var(--mut);font-size:.88rem">Belum ada laporan.</p>';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenAction — Small Actions. Greater Impact.</title>
+<meta name="description" content="Platform inovasi & keberlanjutan lingkungan nasional. Temukan kampanye, kegiatan komunitas, dan ukur dampak aksi lingkunganmu.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+
+<!-- HERO -->
+<section class="hero" style="padding:0">
+  <img class="bgimg" src="/img/hero/hero-forest.jpg" alt="Hutan tropis Indonesia" fetchpriority="high">
+  <div class="container">
+    <span class="eyebrow">PLATFORM LINGKUNGAN NASIONAL</span>
+    <h1>The Future of Our Planet Starts With Us.</h1>
+    <p class="lead">Temukan inisiatif lingkungan yang bermakna, terhubung dengan komunitas yang peduli, dan ubah aksi kecil menjadi perubahan yang terukur.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="/kampanye">Jelajahi Inisiatif</a>
+      <a class="btn btn-outline" href="/daftar" style="color:#fff;border-color:rgba(255,255,255,.5)">Jadi Relawan</a>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-band">
+  <div class="container">
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat"><div class="num" data-count="6420">0</div><div class="lbl">Pohon Ditanam</div></div>
+      <div class="stat"><div class="num" data-count="3810">0</div><div class="lbl">Kg Sampah Terkumpul</div></div>
+      <div class="stat"><div class="num" data-count="923">0</div><div class="lbl">Relawan Aktif</div></div>
+      <div class="stat"><div class="num" data-count="275">0</div><div class="lbl">Kegiatan Lingkungan</div></div>
+    </div>
+    <div class="demo-note">* Angka statistik adalah data demo untuk keperluan kompetisi, bukan pencapaian aktual.</div>
+  </div>
+</div>
+
+<!-- FEATURED CAMPAIGNS -->
+<section>
+  <div class="container">
+    <div class="sec-row reveal">
+      <div class="sec-head">
+        <div class="kicker">Kampanye Unggulan</div>
+        <h2>Inisiatif yang Sedang Berjalan</h2>
+        <p>Pilih kampanye yang paling dekat dengan tugasmu — dari reboisasi sampai energi bersih.</p>
+      </div>
+      <a class="btn btn-outline" href="/kampanye">Lihat Semua Kampanye →</a>
+    </div>
+    <div class="grid grid-3" id="featuredCampaigns"></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div class="kicker">Cara Kerja</div>
+      <h2>Dari Niat ke Dampak Nyata</h2>
+    </div>
+    <div class="steps reveal">
+      <div class="step"><h4>Discover</h4><p>Temukan kampanye, kegiatan, dan komunitas lingkungan di dekatmu.</p></div>
+      <div class="step"><h4>Participate</h4><p>Daftar jadi relawan dalam kegiatan yang kamu pilih.</p></div>
+      <div class="step"><h4>Contribute</h4><p>Berkontribusi nyata: tanam, bersihkan, edukasi, laporkan isu.</p></div>
+      <div class="step"><h4>Track Impact</h4><p>Pantau kontribusi & poinmu di dashboard pribadi.</p></div>
+      <div class="step"><h4>Inspire Others</h4><p>Bagikan progresmu dan ajak lebih banyak orang bergerak.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNITY SPOTLIGHT -->
+<section>
+  <div class="container">
+    <div class="sec-row reveal">
+      <div class="sec-head">
+        <div class="kicker">Community Spotlight</div>
+        <h2>Komunitas yang Menggerakkan Perubahan</h2>
+      </div>
+      <a class="btn btn-outline" href="/komunitas">Semua Komunitas →</a>
+    </div>
+    <div class="grid grid-3" id="spotlight"></div>
+  </div>
+</section>
+
+<!-- STORIES -->
+<section style="background:#fff;border-top:1px solid var(--line)">
+  <div class="container">
+    <div class="sec-row reveal">
+      <div class="sec-head">
+        <div class="kicker">Cerita Lingkungan</div>
+        <h2>Insight & Edukasi Terbaru</h2>
+        <p>Artikel edukasi dengan sumber yang bisa diverifikasi.</p>
+      </div>
+      <a class="btn btn-outline" href="/edukasi">Semua Artikel →</a>
+    </div>
+    <div id="stories"></div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section style="background:var(--mint)">
+  <div class="container" style="text-align:center">
+    <div class="sec-head reveal" style="margin:0 auto;text-align:center">
+      <div class="kicker">Bergabung Sekarang</div>
+      <h2 style="margin:0 auto">Be Part of the Change.</h2>
+      <p style="margin:14px auto 30px">Ribuan aksi kecil, satu arah: bumi yang lebih sehat. Mulai dari langkahmu hari ini.</p>
+      <a class="btn btn-deep" href="/daftar">Daftar Jadi Relawan</a>
+    </div>
+  </div>
+</section>
+
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML = GA.headerHTML('home');
+document.getElementById('footer').innerHTML = GA.footerHTML();
+GA.initReveal();
+
+// animated counters
+const nums=document.querySelectorAll('#statsGrid .num');
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting) return;
+  const el=e.target, target=+el.dataset.count, t0=performance.now();
+  (function tick(t){ const p=Math.min((t-t0)/1400,1); el.textContent=GA.fmt(Math.round(target*(1-Math.pow(1-p,3)))); if(p<1) requestAnimationFrame(tick); })(t0);
+  io.unobserve(el);
+}),{threshold:.4});
+nums.forEach(n=>io.observe(n));
+
+// featured campaigns (3 pertama)
+GA.api('/campaigns?sort=progress').then(d=>{
+  document.getElementById('featuredCampaigns').innerHTML = d.items.slice(0,3).map(c=>{
+    const pct=Math.round(c.progress/c.target*100);
+    return `<article class="card reveal">
+      <img class="thumb" src="${c.foto}" alt="${GA.esc(c.judul)}" loading="lazy">
+      <div class="body">
+        <span class="tag green">${GA.esc(c.kategori)}</span>
+        <h3 style="margin-top:10px">${GA.esc(c.judul)}</h3>
+        <p class="desc">${GA.esc(c.deskripsi.slice(0,110))}…</p>
+        <div class="progress"><i style="width:${pct}%"></i></div>
+        <div class="progress-lbl"><span>${GA.fmt(c.progress)}/${GA.fmt(c.target)}</span><span>${pct}%</span></div>
+        <div class="meta"><span>📍 ${GA.esc(c.lokasi)}</span><span>👥 ${GA.fmt(c.relawan)} relawan</span></div>
+        <div class="foot"><a class="btn btn-primary btn-sm" href="/kampanye/${c.id}">Lihat Detail</a><span class="tag">${c.status}</span></div>
+      </div>
+    </article>`;}).join('');
+  GA.initReveal();
+});
+// spotlight
+GA.api('/communities').then(d=>{
+  document.getElementById('spotlight').innerHTML = d.items.slice(0,3).map(k=>`
+    <article class="card reveal">
+      <img class="thumb" src="${k.foto}" alt="${GA.esc(k.nama)}" loading="lazy">
+      <div class="body">
+        <h3>${GA.esc(k.nama)} ${k.terverifikasi?'<span class="tag blue">Terverifikasi</span>':''}</h3>
+        <p class="desc">${GA.esc(k.deskripsi)}</p>
+        <div class="meta"><span>${GA.fmt(k.anggota)} anggota</span><span>${k.kegiatan} kegiatan</span></div>
+        <div class="foot"><a class="btn btn-outline btn-sm" href="/komunitas/${k.id}">Profil Komunitas</a></div>
+      </div>
+    </article>`).join('');
+  GA.initReveal();
+});
+// stories
+GA.api('/articles').then(d=>{
+  document.getElementById('stories').innerHTML = d.items.slice(0,3).map(a=>`
+    <a href="/artikel/${a.id}" class="story reveal">
+      <img src="${a.foto}" alt="${GA.esc(a.judul)}" loading="lazy">
+      <div>
+        <span class="tag">${GA.esc(a.kategori)}</span>
+        <h3>${GA.esc(a.judul)}</h3>
+        <p style="color:var(--mut);font-size:.93rem">${GA.esc(a.ringkas)}</p>
+        <div class="meta" style="margin-top:10px">${a.tanggal} · Sumber: ${GA.esc(a.sumber)}</div>
+      </div>
+    </a>`).join('');
+  GA.initReveal();
+});
+</script>
+</body>
+</html>

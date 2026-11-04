@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="t">Komunitas — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div class="container" style="padding-top:48px" id="wrap"><div class="skeleton" style="height:320px;border-radius:20px"></div></div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('komunitas');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+const id=location.pathname.split('/').pop();
+Promise.all([GA.api('/communities/'+id), GA.api('/activities')]).then(([d,da])=>{
+  if(!d.success){ document.getElementById('wrap').innerHTML='<p style="padding:60px 0;color:var(--mut)">Komunitas tidak ditemukan.</p>'; return; }
+  const k=d.item;
+  document.getElementById('t').textContent=k.nama+' — GreenAction';
+  const acts=da.items.filter(a=>a.komunitas===k.nama);
+  document.getElementById('wrap').innerHTML=`
+  <a href="/komunitas" style="color:var(--mut);font-size:.9rem;font-weight:600">← Semua komunitas</a>
+  <div class="split" style="margin-top:22px">
+    <img src="${k.foto}" alt="${GA.esc(k.nama)}">
+    <div>
+      ${k.terverifikasi?'<span class="tag blue">Organizer Terverifikasi</span>':''}
+      <h1 style="font-size:2rem;color:var(--deep);margin:12px 0">${GA.esc(k.nama)}</h1>
+      <p style="color:var(--mut)">${GA.esc(k.deskripsi)}</p>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0">
+        <div class="panel" style="margin:0;padding:16px;text-align:center"><b style="font-size:1.3rem;color:var(--deep)">${GA.fmt(k.anggota)}</b><div style="font-size:.8rem;color:var(--mut)">Anggota</div></div>
+        <div class="panel" style="margin:0;padding:16px;text-align:center"><b style="font-size:1.3rem;color:var(--deep)">${k.kegiatan}</b><div style="font-size:.8rem;color:var(--mut)">Kegiatan</div></div>
+        <div class="panel" style="margin:0;padding:16px;text-align:center"><b style="font-size:1.1rem;color:var(--deep)">📍 ${GA.esc(k.lokasi)}</b><div style="font-size:.8rem;color:var(--mut)">Basis</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="GA.requireLogin()&&GA.toast('Permintaan gabung dikirim — menunggu persetujuan organizer')">Gabung Komunitas</button>
+    </div>
+  </div>
+  <h2 style="margin:44px 0 20px;color:var(--deep)">Kegiatan oleh ${GA.esc(k.nama)}</h2>
+  <div class="grid grid-3">${acts.length?acts.map(a=>`
+    <article class="card"><img class="thumb" src="${a.foto}" alt="" loading="lazy">
+      <div class="body"><h3>${GA.esc(a.judul)}</h3>
+      <div class="meta"><span>📅 ${a.tanggal}</span><span>📍 ${GA.esc(a.lokasi)}</span></div>
+      <div class="foot"><a class="btn btn-outline btn-sm" href="/kegiatan/${a.id}">Detail</a></div></div>
+    </article>`).join(''):'<p style="color:var(--mut)">Belum ada kegiatan terjadwal.</p>'}</div>`;
+});
+</script>
+</body>
+</html>

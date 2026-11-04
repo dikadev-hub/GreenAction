@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profil Saya — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div class="container" style="padding:48px 0">
+  <div id="prof"></div>
+  <div class="panel" style="margin-top:24px"><h3>Riwayat Kontribusi</h3><div id="hist"></div></div>
+</div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+if(!GA.requireLogin()) throw '';
+(async()=>{
+  const me=GA.getUser();
+  const my=await GA.api('/me');
+  const LEVELS=[[0,'Seedling 🌱'],[50,'Sprout 🌿'],[150,'Sapling 🌳'],[400,'Guardian 🛡️'],[900,'Forest Keeper 🏔️']];
+  let lvl=LEVELS[0][1]; for(const [t,n] of LEVELS) if(my.poin.poin>=t) lvl=n;
+  document.getElementById('prof').innerHTML=`
+  <div class="split" style="align-items:center">
+    <div style="width:96px;height:96px;border-radius:50%;background:var(--deep);color:#fff;display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800">${GA.esc(me.nama[0].toUpperCase())}</div>
+    <div>
+      <h1 style="color:var(--deep);font-size:1.7rem">${GA.esc(me.nama)}</h1>
+      <p style="color:var(--mut)">${GA.esc(me.email)}</p>
+      <div style="display:flex;gap:10px;margin-top:10px"><span class="tag green">${lvl}</span><span class="tag">${GA.fmt(my.poin.poin)} poin</span></div>
+    </div>
+  </div>
+  <form class="form" id="pf" style="margin-top:30px;max-width:420px">
+    <div id="msg"></div>
+    <div class="field"><label for="kota">Kota/kabupaten</label><input id="kota" value="${GA.esc(my.profil.kota||'')}"></div>
+    <div class="field"><label for="provinsi">Provinsi</label><input id="provinsi" value="${GA.esc(my.profil.provinsi||'')}"></div>
+    <button class="btn btn-primary" type="submit">Simpan Perubahan</button>
+  </form>`;
+  document.getElementById('pf').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const d=await GA.api('/me/profile',{method:'POST',body:JSON.stringify({kota:kota.value,provinsi:provinsi.value})});
+    document.getElementById('msg').innerHTML=d.success?'<div class="form-ok">Profil diperbarui ✓</div>':'<div class="form-error">Gagal menyimpan</div>';
+  });
+  GA.api('/my/joins').then(j=>GA.api('/my/reports').then(r=>{
+    const rows=[...j.items.map(x=>[x.date,'Ikut kegiatan: '+x.title]),...r.items.map(x=>[x.tanggal,'Laporan: '+x.judul])].sort((a,b)=>b[0]>a[0]?1:-1);
+    document.getElementById('hist').innerHTML=rows.length?rows.map(([d,t])=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem"><b style="color:var(--green)">◆</b> ${GA.esc(t)} <span style="color:var(--mut);font-size:.78rem">· ${d}</span></div>`).join('')
+      :'<p style="color:var(--mut);font-size:.9rem">Belum ada riwayat.</p>';
+  }));
+})();
+</script>
+</body>
+</html>

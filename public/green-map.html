@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Green Map — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:56px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Green Map</div>
+      <h2>Peta Lingkungan Interaktif</h2>
+      <p>Temukan bank sampah, pusat daur ulang, ruang hijau publik, lokasi penanaman, dan laporan lingkungan di sekitarmu.</p>
+    </div>
+    <div class="map-filters" id="filters">
+      <button class="chip active" data-f="Semua">Semua</button>
+      <button class="chip" data-f="Pusat Daur Ulang">Pusat Daur Ulang</button>
+      <button class="chip" data-f="Bank Sampah">Bank Sampah</button>
+      <button class="chip" data-f="Ruang Hijau Publik">Ruang Hijau Publik</button>
+      <button class="chip" data-f="Lokasi Penanaman">Lokasi Penanaman</button>
+      <button class="chip" data-f="Kegiatan Lingkungan">Kegiatan</button>
+      <button class="chip" data-f="Laporan Lingkungan">Laporan</button>
+    </div>
+    <div id="map" role="application" aria-label="Peta lokasi lingkungan"></div>
+    <p style="font-size:.78rem;color:var(--mut);margin-top:14px">Peta data © OpenStreetMap contributors · Titik lokasi adalah <b>dataset demo</b> yang ditandai untuk keperluan kompetisi.</p>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('map');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+const COLORS={'Pusat Daur Ulang':'#2B4C8C','Bank Sampah':'#237A50','Ruang Hijau Publik':'#65A77B','Lokasi Penanaman':'#123C2B','Kegiatan Lingkungan':'#8A6410','Laporan Lingkungan':'#A33A32'};
+const map=L.map('map').setView([-6.9,107.6],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+let all=[],markers=[];
+function draw(f){
+  markers.forEach(m=>map.removeLayer(m)); markers=[];
+  all.filter(p=>f==='Semua'||p.kategori===f).forEach(p=>{
+    const icon=L.divIcon({className:'',html:`<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${COLORS[p.kategori]||'#237A50'};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>`,iconSize:[22,22]});
+    const m=L.marker([p.lat,p.lng],{icon}).addTo(map)
+      .bindPopup(`<b>${GA.esc(p.nama)}</b><br><span style="color:#237A50;font-size:.8rem;font-weight:700">${GA.esc(p.kategori)}</span><br><span style="font-size:.8rem">${GA.esc(p.alamat)}</span>`);
+    markers.push(m);
+  });
+}
+document.getElementById('filters').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  b.classList.add('active'); draw(b.dataset.f);
+});
+GA.api('/mappoints').then(d=>{ all=d.items; draw('Semua'); });
+</script>
+</body>
+</html>

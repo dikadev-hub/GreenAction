@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Papan Peringkat — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:56px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Leaderboard</div>
+      <h2>Papan Peringkat Relawan</h2>
+      <p>Poin dihimpun dari partisipasi kegiatan & penyelesaian Eco Challenge. Poin ≠ dampak terverifikasi.</p>
+    </div>
+    <div class="panel" style="padding:0;overflow:hidden">
+      <table class="tbl" id="tbl">
+        <thead><tr><th>#</th><th>Relawan</th><th>Lokasi</th><th style="text-align:right">Kontribusi</th><th style="text-align:right">Poin</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('leaderboard');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+GA.api('/leaderboard').then(d=>{
+  document.querySelector('#tbl tbody').innerHTML=d.items.map((u,i)=>`
+    <tr><td><b>${i+1}</b>${i===0?' 🥇':i===1?' 🥈':i===2?' 🥉':''}</td>
+    <td><b>${GA.esc(u.nama)}</b></td><td>${GA.esc(u.lokasi||'—')}</td>
+    <td style="text-align:right">${GA.fmt(u.kontribusi)} aksi</td>
+    <td style="text-align:right"><b style="color:var(--green)">${GA.fmt(u.poin)}</b> poin</td></tr>`).join('');
+});
+</script>
+</body>
+</html>

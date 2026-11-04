@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edukasi Lingkungan — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:56px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Environmental Education</div>
+      <h2>Artikel Edukasi Lingkungan</h2>
+      <p>Konten edukasi dengan fakta bersumber — bukan klaim tanpa rujukan.</p>
+    </div>
+    <div class="grid grid-3" id="list"></div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('edukasi');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+GA.api('/articles').then(d=>{
+  document.getElementById('list').innerHTML=d.items.map(a=>`
+    <article class="card">
+      <img class="thumb" src="${a.foto}" alt="${GA.esc(a.judul)}" loading="lazy">
+      <div class="body">
+        <span class="tag green">${GA.esc(a.kategori)}</span>
+        <h3 style="margin-top:10px">${GA.esc(a.judul)}</h3>
+        <p class="desc">${GA.esc(a.ringkas)}</p>
+        <div class="meta"><span>${a.tanggal}</span></div>
+        <div class="foot"><a class="btn btn-outline btn-sm" href="/artikel/${a.id}">Baca Artikel</a></div>
+      </div>
+    </article>`).join('');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="header"></div>
+<div class="container" style="padding:48px 0">
+  <div id="greet"></div>
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)" id="kpis"></div>
+  <div class="chart-grid" style="grid-template-columns:1fr 1fr">
+    <div class="chart-box"><h3>Progres Tantanganku</h3><canvas id="ch1" height="200"></canvas></div>
+    <div class="chart-box"><h3>Sebaran Kontribusiku</h3><canvas id="ch2" height="200"></canvas></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px" id="panels">
+    <div class="panel"><h3>Pendaftaran Kegiatan</h3><div id="joins"></div></div>
+    <div class="panel"><h3>Laporanku</h3><div id="reps"></div></div>
+  </div>
+  <div class="panel" style="margin-top:24px"><h3>Tantangan Aktif</h3><div id="chal"></div></div>
+</div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+if(!GA.requireLogin()) throw '';
+(async()=>{
+  const me=GA.getUser();
+  document.getElementById('greet').innerHTML=`<h1 style="font-size:1.9rem;color:var(--deep)">Halo, ${GA.esc(me.nama.split(' ')[0])} 👋</h1>
+  <p style="color:var(--mut);margin-bottom:24px">Terus catat kontribusimu. Setiap aksi kecil berarti.</p>`;
+  const [my,joins,reps,chals]=await Promise.all([GA.api('/me'),GA.api('/my/joins'),GA.api('/my/reports'),GA.api('/my/challenges')]);
+  const p=my.poin;
+  document.getElementById('kpis').innerHTML=[
+    ['Poin Relawan',GA.fmt(p.poin)],['Kegiatan Diikuti',p.kegiatan],['Laporan Terkirim',p.laporan]
+  ].map(([l,v])=>`<div class="panel" style="margin:0"><b style="font-size:1.6rem;color:var(--deep)">${v}</b><div style="font-size:.85rem;color:var(--mut)">${l}</div></div>`).join('');
+  document.getElementById('joins').innerHTML=joins.items.length?joins.items.map(j=>`
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem">
+      <div><b>${GA.esc(j.title)}</b><div style="color:var(--mut);font-size:.78rem">${j.type==='campaign'?'Kampanye':'Kegiatan'} · ${(j.dibuat||'').slice(0,10)}</div></div>
+      <span class="badge ${j.status==='Approved'?'Approved':j.status}">${j.status}</span>
+    </div>`).join(''):'<p style="color:var(--mut);font-size:.9rem">Belum ada pendaftaran. <a href="/kegiatan" style="color:var(--green)">Jelajahi kegiatan →</a></p>';
+  document.getElementById('reps').innerHTML=reps.items.length?reps.items.map(r=>`
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem">
+      <div><b>${GA.esc(r.judul)}</b><div style="color:var(--mut);font-size:.78rem">${r.id} · ${r.kategori}</div></div>
+      <span class="badge ${r.status.replace(' ','')}">${r.status}</span>
+    </div>`).join(''):'<p style="color:var(--mut);font-size:.9rem">Belum ada laporan. <a href="/lapor" style="color:var(--green)">Laporkan isu →</a></p>';
+  document.getElementById('chal').innerHTML=chals.items.length?chals.items.map(c=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem">
+      <b>${GA.esc(c.title)}</b><span>${c.progress}/7 hari · ${c.selesai?'<span class="badge Approved">selesai</span>':'🔥 '+c.streak}</span>
+    </div>`).join(''):'<p style="color:var(--mut);font-size:.9rem">Belum ikut tantangan. <a href="/tantangan" style="color:var(--green)">Lihat Eco Challenge →</a></p>';
+  new Chart(ch1,{type:'bar',data:{labels:chals.items.map(c=>c.title.split(' ').slice(0,2).join(' ')),
+    datasets:[{label:'Hari',data:chals.items.map(c=>c.progress),backgroundColor:'#237A50',borderRadius:8}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:7}}}});
+  new Chart(ch2,{type:'doughnut',data:{labels:['Kegiatan','Laporan','Tantangan'],
+    datasets:[{data:[p.kegiatan,p.laporan,chals.items.filter(c=>c.selesai).length],backgroundColor:['#123C2B','#237A50','#65A77B'],borderWidth:0}]},
+    options:{plugins:{legend:{position:'bottom'}}}});
+})();
+</script>
+</body>
+</html>

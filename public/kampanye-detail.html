@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="t">Detail Kampanye — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<div class="container" style="padding-top:48px" id="wrap">
+  <div class="skeleton" style="height:380px;border-radius:20px"></div>
+</div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('kampanye');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+const id=location.pathname.split('/').pop();
+GA.api('/campaigns/'+id).then(d=>{
+  if(!d.success){ document.getElementById('wrap').innerHTML='<p style="padding:60px 0;color:var(--mut)">Kampanye tidak ditemukan. <a href="/kampanye" style="color:var(--green);font-weight:700">Kembali ke daftar →</a></p>'; return; }
+  const c=d.item, pct=Math.round(c.progress/c.target*100);
+  document.getElementById('t').textContent=c.judul+' — GreenAction';
+  document.getElementById('wrap').innerHTML=`
+  <a href="/kampanye" style="color:var(--mut);font-size:.9rem;font-weight:600">← Semua kampanye</a>
+  <div class="split" style="margin-top:22px">
+    <img src="${c.foto}" alt="${GA.esc(c.judul)}">
+    <div>
+      <span class="tag green">${GA.esc(c.kategori)}</span> <span class="tag">${c.status}</span>
+      <h1 style="font-size:2rem;color:var(--deep);margin:14px 0;letter-spacing:-.02em">${GA.esc(c.judul)}</h1>
+      <p style="color:var(--mut)">${GA.esc(c.deskripsi)}</p>
+      <div class="progress" style="margin-top:24px"><i style="width:${pct}%"></i></div>
+      <div class="progress-lbl"><span>${GA.fmt(c.progress)} dari ${GA.fmt(c.target)}</span><span>${pct}% tercapai</span></div>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0">
+        <div class="panel" style="margin:0;padding:16px;text-align:center"><b style="font-size:1.3rem;color:var(--deep)">${GA.fmt(c.relawan)}</b><div style="font-size:.8rem;color:var(--mut)">Relawan</div></div>
+        <div class="panel" style="margin:0;padding:16px;text-align:center"><b style="font-size:1.3rem;color:var(--deep)">📍 ${GA.esc(c.lokasi)}</b><div style="font-size:.8rem;color:var(--mut)">Lokasi</div></div>
+        <div class="panel" style="margin:0;padding:16px;text-align:center"><b style="font-size:1.3rem;color:var(--deep)">${GA.esc(c.tenggat)}</b><div style="font-size:.8rem;color:var(--mut)">Tenggat</div></div>
+      </div>
+      <p style="font-size:.85rem;color:var(--mut)">Diselenggarakan oleh <b>${GA.esc(c.organizer)}</b></p>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button class="btn btn-primary" id="joinBtn" onclick="joinCampaign('${c.id}')">Ikuti Kampanye</button>
+        <button class="btn btn-outline" onclick="toggleSave('${c.id}')" id="saveBtn">♡ Simpan</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:40px"><h3>Progress Tracking</h3>
+    <p style="color:var(--mut);font-size:.92rem">Progres kampanye diperbarui oleh penyelenggara dan diverifikasi oleh tim GreenAction. Data ini adalah <b>data demo</b> untuk keperluan kompetisi.</p>
+  </div>`;
+  if(GA.getToken()) GA.api('/my/saved').then(s=>{ if((s.keys||[]).includes('campaign:'+c.id)) document.getElementById('saveBtn').textContent='♥ Tersimpan'; });
+});
+async function joinCampaign(cid){
+  if(!GA.requireLogin())return;
+  const d=await GA.api('/join',{method:'POST',body:JSON.stringify({type:'campaign',id:cid})});
+  if(d.success) GA.toast('Pendaftaran terkirim — status: '+d.status);
+  else GA.toast(d.message||'Gagal mendaftar');
+}
+async function toggleSave(cid){
+  if(!GA.requireLogin())return;
+  const d=await GA.api('/saved/toggle',{method:'POST',body:JSON.stringify({type:'campaign',id:cid})});
+  const b=document.getElementById('saveBtn');
+  if(d.saved){ b.textContent='♥ Tersimpan'; GA.toast('Disimpan ke daftarmu'); } else { b.textContent='♡ Simpan'; GA.toast('Dihapus dari daftar'); }
+}
+</script>
+</body>
+</html>
