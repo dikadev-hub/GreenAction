@@ -44,7 +44,7 @@ GA.api('/campaigns/'+id).then(d=>{
     </div>
   </div>
   <div class="panel" style="margin-top:40px"><h3>Progress Tracking</h3>
-    <p style="color:var(--mut);font-size:.92rem">Progres kampanye diperbarui oleh penyelenggara dan diverifikasi oleh tim GreenAction. Data ini adalah <b>data demo</b> untuk keperluan kompetisi.</p>
+    <p style="color:var(--mut);font-size:.92rem">Progres kampanye diperbarui oleh penyelenggara dan diverifikasi oleh tim GreenAction. Data ini adalah <b>data demo</b> yang ditandai secara jelas.</p>
   </div>`;
   if(GA.getToken()) GA.api('/my/saved').then(s=>{ if((s.keys||[]).includes('campaign:'+c.id)) document.getElementById('saveBtn').textContent='♥ Tersimpan'; });
 });

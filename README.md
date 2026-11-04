@@ -17,7 +17,7 @@ GreenAction adalah platform web environmental technology yang menghubungkan masy
 - **Nama:** GreenAction
 - **Tagline:** Small Actions. Greater Impact.
 - **Kategori:** Environmental Technology & Sustainability Platform
-- **Konteks:** Kompetisi olimpiade web design nasional
+- **Konteks:** Platform environmental technology independen
 
 ## 2. About GreenAction
 
@@ -155,7 +155,7 @@ Akun admin demo:
 - Email: `admin@greenaction.id`
 - Password: `admin123`
 
-⚠️ *Khusus deployment kompetisi/demo. Ganti atau hapus akun ini untuk produksi nyata.*
+⚠️ *Akun demo. Ganti atau hapus sebelum deployment produksi nyata.*
 
 Admin Dashboard (`/admin`) menyediakan: statistik platform, grafik pertumbuhan user & laporan, **antrian verifikasi laporan** (Review → Verify / Tolak), **approval pendaftaran kegiatan** (setuju/tolak — menambah poin user & kuota kegiatan), dan daftar semua pengguna.
 
@@ -239,7 +239,7 @@ Diuji langsung di browser + curl (lokal, port 9100):
 ## 20. Known Limitations
 
 - **Data demo:** kampanye, kegiatan, komunitas, titik map, artikel, dan statistik dampak adalah dataset demo berlabel jujur — bukan data organisasi nyata. Laporan & akun yang dibuat pengunjung adalah data nyata.
-- Database JSON cocok untuk skala kompetisi/demo, bukan produksi besar.
+- Database JSON cocok untuk fase awal; migrasi ke SQL tercantum di roadmap.
 - Sesi token in-memory: user perlu login ulang setelah server restart (data tetap aman).
 - Upload foto disimpan sebagai base64 di DB (batas 2MB).
 - Tidak ada email verifikasi.

@@ -58,7 +58,7 @@ window.GA = (function(){
           <div class="brandline">
             <a href="/" class="brand" style="color:#fff"><span class="logo" style="background:#1E5A40">🌿</span><span>GreenAction</span></a>
             <p>Platform inovasi & keberlanjutan lingkungan nasional. Temukan aksi nyata, bangun komunitas, dan ukur dampaknya.</p>
-            <p style="margin-top:18px;font-size:.78rem;color:#8FB49C">Data statistik & konten kegiatan di situs ini adalah data demo yang ditandai jelas untuk keperluan kompetisi.</p>
+            <p style="margin-top:18px;font-size:.78rem;color:#8FB49C">Data statistik & konten kegiatan pada halaman demo ini ditandai secara jelas dan diperbarui berkala.</p>
           </div>
           <div>
             <h4>Platform</h4>
@@ -74,7 +74,7 @@ window.GA = (function(){
           </div>
         </div>
         <div class="bottom">
-          <span>© 2026 GreenAction. Dibuat untuk kompetisi web design nasional.</span>
+          <span>© 2026 GreenAction. Small Actions. Greater Impact.</span>
           <span class="creator-tag">Created & Developed By: Dika X Dev</span>
         </div>
       </div>
