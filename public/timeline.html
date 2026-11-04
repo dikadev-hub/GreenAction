@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impact Timeline — GreenAction</title>
+<meta name="description" content="Perjalanan dan perkembangan kegiatan GreenAction: kampanye, kegiatan, komunitas, dan dampak terverifikasi.">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Impact Timeline</div>
+      <h2>Perjalanan Aksi Lingkungan</h2>
+      <p>Kronologi perkembangan platform dan kegiatan yang telah berjalan. Semua entri timeline berdasarkan data demo yang ditandai — bukan klaim pencapaian aktual.</p>
+    </div>
+    <div class="timeline" id="tl"></div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('timeline');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+GA.api('/timeline').then(d=>{
+  document.getElementById('tl').innerHTML=d.items.map(t=>`
+    <div class="tl-item">
+      <div class="tl-date">${GA.esc(t.periode)}</div>
+      <div class="tl-body">
+        <span class="tag ${t.tipe==='milestone'?'green':'blue'}">${GA.esc(t.tipe)}</span>
+        <h3 style="margin:8px 0 6px">${GA.esc(t.judul)}</h3>
+        <p style="color:var(--mut);font-size:.92rem">${GA.esc(t.deskripsi)}</p>
+        ${t.dampak?`<div style="font-size:.8rem;margin-top:8px"><b>Dampak tercatat:</b> ${GA.esc(t.dampak)} <span style="color:var(--mut)">(demo)</span></div>`:''}
+      </div>
+    </div>`).join('');
+});
+</script>
+</body>
+</html>

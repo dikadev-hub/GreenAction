@@ -275,6 +275,8 @@ api.post('/reports', requireAuth, rateLimit('report', 5, 60_000), (req, res) => 
   const reports = getDB('reports.json', []);
   const r = { id: 'RPT-' + String(Date.now()).slice(-6), judul, kategori, deskripsi, lokasi, tanggal: tanggal || new Date().toISOString().slice(0, 10), status: 'Submitted', pelapor: req.session.userId, foto: foto || '' };
   reports.push(r); saveDB('reports.json', reports);
+  notifyAdmins('report', 'Laporan baru masuk: ' + r.judul, '/admin');
+  notify(req.session.userId, 'report', 'Laporan ' + r.id + ' terkirim — status: Submitted', '/dashboard');
   res.json({ success: true, item: r });
 });
 api.get('/my/reports', requireAuth, (req, res) => {
@@ -353,7 +355,7 @@ api.post('/admin/joins/:key', requireAdmin, (req, res) => {
     }
     // poin user
     const users = getDB('users.json', []); const u = users.find(x => x.id === r.userId);
-    if (u) { u.poin += 20; u.kontribusi += 1; saveDB('users.json', users); }
+    if (u) { u.poin += 20; u.kontribusi += 1; saveDB('users.json', users); notify(u.id, 'join', 'Pendaftaranmu disetujui (+20 poin)', '/dashboard'); }
     saveDB('stats.json', stats);
   }
   res.json({ success: true });
@@ -366,10 +368,162 @@ api.post('/admin/reports/:id', requireAdmin, (req, res) => {
   const r = reports.find(x => x.id === req.params.id);
   if (!r) return res.status(404).json({ success: false });
   r.status = status; saveDB('reports.json', reports);
+  notify(r.pelapor, 'report', 'Status laporan ' + r.id + ' diperbarui: ' + status, '/dashboard');
   res.json({ success: true });
 });
 
 // --- clean URLs + profile + admin aggregate ---
+// ===== NOTIFICATIONS =====
+function notify(userId, tipe, pesan, link) {
+  const notes = getDB('notifications.json', []);
+  notes.push({ id: 'NTF-' + String(Date.now()).slice(-8), userId, tipe, pesan: String(pesan).slice(0, 200), link: link || '', baca: false, waktu: new Date().toISOString() });
+  saveDB('notifications.json', notes.slice(-200));
+}
+function notifyAdmins(tipe, pesan, link) {
+  getDB('users.json', []).filter(u => u.role === 'admin').forEach(a => notify(a.id, tipe, pesan, link));
+}
+api.get('/notifications', requireAuth, (req, res) => {
+  const items = getDB('notifications.json', []).filter(n => n.userId === req.session.userId).sort((a, b) => b.waktu.localeCompare(a.waktu));
+  res.json({ success: true, items, unread: items.filter(n => !n.baca).length });
+});
+api.post('/notifications/:id/read', requireAuth, (req, res) => {
+  const notes = getDB('notifications.json', []);
+  const n = notes.find(x => x.id === req.params.id && x.userId === req.session.userId);
+  if (n) { n.baca = true; saveDB('notifications.json', notes); }
+  res.json({ success: true });
+});
+api.post('/notifications/read-all', requireAuth, (req, res) => {
+  const notes = getDB('notifications.json', []);
+  let c = 0; notes.forEach(n => { if (n.userId === req.session.userId && !n.baca) { n.baca = true; c++; } });
+  saveDB('notifications.json', notes);
+  res.json({ success: true, updated: c });
+});
+
+// ===== MONITOR (province aggregate) =====
+api.get('/monitor/province', (req, res) => {
+  const prov = String(req.query.prov || '').slice(0, 60);
+  if (!prov) return res.status(400).json({ success: false, message: 'Parameter prov wajib' });
+  const points = getDB('mappoints.json', []);
+  const inProv = points.filter(p => (p.provinsi || p.lokasi || '').toLowerCase().includes(prov.toLowerCase()));
+  const activities = getDB('activities.json', []).filter(a => (a.lokasi || '').toLowerCase().includes(prov.toLowerCase()));
+  const terbaru = [...inProv.filter(p => p.kategori !== 'Laporan Lingkungan').map(p => ({ nama: p.nama, kategori: p.kategori })), ...activities.map(a => ({ nama: a.judul, kategori: a.jenis || 'Kegiatan' }))].slice(0, 4);
+  res.json({
+    success: true,
+    stats: {
+      kampanye: getDB('campaigns.json', []).filter(c => (c.lokasi || '').toLowerCase().includes(prov.toLowerCase())).length || inProv.filter(p => p.kategori === 'Lokasi Penanaman').length,
+      komunitas: inProv.filter(p => p.kategori === 'Bank Sampah' || p.kategori === 'Ruang Hijau Publik').length,
+      aktivitas: activities.length || inProv.filter(p => p.kategori === 'Kegiatan Lingkungan').length,
+      laporan: inProv.filter(p => p.kategori === 'Laporan Lingkungan').length,
+      pohon: Math.min(1500, inProv.length * 120),
+      sampah: Math.min(2400, inProv.length * 190)
+    },
+    terbaru, demo: true
+  });
+});
+
+// ===== DASHBOARD aggregate (period) =====
+api.get('/dashboard', (req, res) => {
+  const period = ['7', '30', '90', '365'].includes(String(req.query.periode)) ? Number(req.query.periode) : 30;
+  const reports = getDB('reports.json', []);
+  const seedCategory = { 'Reforestation': 6, 'Ocean Conservation': 3, 'Waste Management': 4, 'Clean Energy': 2, 'Biodiversity': 2, 'Water Conservation': 2, 'Sustainable Living': 2 };
+  const wilayahSeed = [['Jawa Barat', 24], ['Jawa Tengah', 18], ['Kalimantan', 15], ['Sumatra', 13], ['Bali', 9], ['Papua', 6]];
+  res.json({
+    success: true, periode: period,
+    kategori: Object.entries(seedCategory).map(([nama, jumlah]) => ({ nama, jumlah })),
+    wilayah: wilayahSeed.map(([nama, jumlah]) => ({ nama, jumlah: Math.ceil(jumlah * (period / 30)) })),
+    verifikasi: [
+      getDB('stats.json', {}).trees || 0,
+      reports.filter(r => r.status === 'Submitted' || r.status === 'Under Review').length,
+      reports.filter(r => r.status === 'Submitted').length
+    ],
+    terbaru: getDB('activities.json', []).slice(0, 5).map(a => ({ nama: a.judul, lokasi: a.lokasi, kategori: a.jenis, status: 'Terverifikasi' })),
+    demo: true
+  });
+});
+
+// ===== TIMELINE =====
+api.get('/timeline', (req, res) => {
+  res.json({
+    success: true,
+    items: [
+      { periode: 'Q1 2026', tipe: 'milestone', judul: 'GreenAction Diluncurkan', deskripsi: 'Platform mulai dibangun: direktori kampanye, kegiatan, dan direktori komunitas lingkungan.', dampak: '' },
+      { periode: 'Q2 2026', tipe: 'fitur', judul: 'Green Map & Pelaporan Warga', deskripsi: 'Peta interaktif titik lingkungan diluncurkan bersama sistem pelaporan masalah lingkungan dengan alur verifikasi.', dampak: '120 titik demo terpetakan' },
+      { periode: 'Q3 2026', tipe: 'fitur', judul: 'Eco Challenge & Sistem Poin', deskripsi: 'Tantangan gaya hidup berkelanjutan dengan streak harian, badge, dan papan peringkat relawan.', dampak: '6 tantangan aktif' },
+      { periode: 'Q4 2026', tipe: 'milestone', judul: 'Indonesia Green Monitor', deskripsi: 'Pemantauan kepulauan Indonesia dalam mode 2D dan 3D dengan ringkasan per wilayah.', dampak: '6 klaster pulau terjangkau (demo)' },
+      { periode: 'Q4 2026', tipe: 'fitur', judul: 'Eco Academy & Green Assistant', deskripsi: 'Pusat edukasi dengan kuis pemahaman dan asisten informasi lingkungan berbasis basis pengetahuan terkurasi.', dampak: '' }
+    ], demo: true
+  });
+});
+
+// ===== ECO ACADEMY + QUIZ =====
+const ACADEMY_QUIZZES = {
+  'ART-001': { pertanyaan: 'Sampah plastik jenis PET (botol bening) sebaiknya diperlakukan bagaimana?', pilihan: ['Dibuang ke sungai agar cepat terurai', 'Dipilah terpisah dan dikirim ke bank sampah/daur ulang', 'Dibakar di halaman rumah'], jawaban: 1, penjelasan: 'Botol PET bernilai daur ulang tinggi — pilah terpisah dan setorkan ke bank sampah agar masuk rantai daur ulang resmi.' },
+  'ART-002': { pertanyaan: 'Apa langkah pertama menghemat air di rumah?', pilihan: ['Mengganti semua kran sekaligus', 'Memperbaiki kebocoran dan memperpendek durasi mandi', 'Menyiram tanaman pakai air minum'], jawaban: 1, penjelasan: 'Kebocoran kecil bisa membuang ratusan liter per hari; perbaikan & kebiasaan mandi singkat berdampak paling cepat.' },
+  'ART-003': { pertanyaan: 'Mengapa kompos penting bagi tanah?', pilihan: ['Menambah bahan organik dan retensi air tanah', 'Membunuh semua mikroorganisme', 'Menggantikan kebutuhan sinar matahari'], jawaban: 0, penjelasan: 'Kompos memperbaiki struktur tanah, menambah bahan organik, dan meningkatkan kemampuan tanah menyimpan air.' }
+};
+api.get('/academy', (req, res) => {
+  res.json({ success: true, items: getDB('articles.json', []).map(a => ({ ...a, menit: 5 })) });
+});
+api.get('/quiz/:id', (req, res) => {
+  const q = ACADEMY_QUIZZES[req.params.id];
+  if (!q) return res.json({ success: true, quiz: null });
+  res.json({ success: true, quiz: { pertanyaan: q.pertanyaan, pilihan: q.pilihan } });
+});
+api.post('/quiz/:id/answer', requireAuth, rateLimit('quiz', 20, 60_000), (req, res) => {
+  const q = ACADEMY_QUIZZES[req.params.id];
+  if (!q) return res.status(404).json({ success: false, message: 'Kuis tidak ditemukan' });
+  const benar = Number(req.body.jawaban) === q.jawaban;
+  if (benar) {
+    const users = getDB('users.json', []); const u = users.find(x => x.id === req.session.userId);
+    if (u) { u.poin = (u.poin || 0) + 5; saveDB('users.json', users); notify(u.id, 'quiz', 'Kuis Eco Academy dijawab benar (+5 poin)', '/academy'); }
+  }
+  res.json({ success: true, benar, penjelasan: q.penjelasan });
+});
+
+// ===== GREEN ASSISTANT (modular: AI provider jika dikonfigurasi, fallback knowledge base) =====
+const KB = [
+  { k: ['memilah sampah', 'pilah sampah', 'pemilahan', 'buang sampah'], a: 'Pemilahan dasar:\n1. Organik (sisa makanan, daun) → kompos.\n2. Anorganik bernilai (plastik bening/PET, kertas, logam) → setorkan ke bank sampah.\n3. B3 (baterai, lampu, elektronik) → titik pengumpulan khusus, jangan dibuang sembarangan.\nKunci utamanya: pisahkan sejak di rumah, jangan dicampur.' },
+  { k: ['kompos', 'komposting'], a: 'Kompos adalah hasil penguraian bahan organik oleh mikroorganisme. Cara mulai: siapkan wadah berlubang, susun sisa organik berlapis dengan bahan kering (daun/kardus), aduk tiap 3–5 hari, panen dalam 4–8 minggu. Kompos memperbaiki struktur tanah dan retensi air.' },
+  { k: ['hemat air', 'menghemat air'], a: 'Tips hemat air harian:\n• Perbaiki kran/pipa bocor (ratusan liter/hari bisa terbuang).\n• Mandi < 5 menit dan matikan keran saat menyikat gigi.\n• Pakai air bekas cuci beras untuk menyiram tanaman.\n• Gunakan toilet dual-flush atau satu flush cukup.' },
+  { k: ['hemat listrik', 'menghemat listrik', 'energi'], a: 'Cara hemat listrik:\n• Cabut charger/perangkat standby.\n• Ganti lampu ke LED.\n• Setel AC 24–26°C dan bersihkan filter rutin.\n• Manfaatkan cahaya alami di siang hari.' },
+  { k: ['green map', 'peta'], a: 'Green Map adalah peta interaktif titik-titik lingkungan: pusat daur ulang, bank sampah, ruang hijau, lokasi penanaman, dan laporan warga. Buka menu "Green Map" atau "Indonesia Green Monitor" untuk mode 2D/3D dan filter kategori.' },
+  { k: ['ikut kegiatan', 'daftar kegiatan', 'relawan', 'volunteer'], a: 'Cara ikut kegiatan:\n1. Login/daftar akun.\n2. Buka menu Kegiatan.\n3. Pilih kegiatan → "Daftar Jadi Peserta".\n4. Tunggu persetujuan (status di dashboard kamu).\nSetelah disetujui, kamu mendapat poin partisipasi.' },
+  { k: ['lapor', 'melaporkan', 'adu'], a: 'Untuk melapor masalah lingkungan: buka menu Lapor, isi judul/kategori/deskripsi/lokasi, tambahkan foto (maks 2MB). Laporan masuk ke antrian verifikasi — statusnya bisa kamu pantau di dashboard. Identitas pelapor dijaga kerahasiaannya.' },
+  { k: ['plastik', 'plastic'], a: 'Mengurangi plastik:\n• Bawa tumbler & tas belanja sendiri.\n• Tolak sedotan & kantong plastik sekali pakai.\n• Pilih produk kemasan refill atau kaca/kertas.\n• Pilah plastik yang tetap terpakai ke bank sampah.' },
+  { k: ['poin', 'green score', 'badge'], a: 'Poin GreenAction mencatat partisipasi: +20 kegiatan disetujui, +5 kuis benar, poin dari Eco Challenge. Ini indikator partisipasi, bukan ukuran ilmiah dampak lingkungan. Level: Seedling → Sprout → Sapling → Guardian → Forest Keeper.' },
+  { k: ['challange', 'challenge', 'tantangan'], a: 'Eco Challenge adalah tantangan kebiasaan harian (misal tolak plastik, hemat air) selama 7 hari. Buka menu Eco Challenge, mulai tantangan, catat progres harian, dan kumpulkan streak + poin.' },
+  { k: ['solar', 'panel surya', 'energi terbarukan', 'terbarukan'], a: 'Energi terbarukan memanfaatkan sumber alami yang tidak cepat habis: surya, angin, air, biomassa. Panel surya mengubah cahaya matahari jadi listrik via sel fotovoltaik — cocok untuk atap rumah di Indonesia karena rata-rata penyinaran tinggi.' },
+  { k: ['reboisasi', 'penanaman', 'pohon'], a: 'Reboisasi memulihkan lahan terdegradasi dengan penanaman pohon. Kunci keberhasilan: pilih spesies lokal/endemik, libatkan masyarakat sekitar, dan rawan hingga tumbuh mapan (bukan sekadar menanam). Lihat kampanye Reforestation di menu Kampanye.' }
+];
+api.get('/assistant/status', (req, res) => {
+  res.json({ mode: process.env.GA_AI_KEY ? 'ai' : 'kb' });
+});
+api.post('/assistant/ask', rateLimit('ask', 15, 60_000), async (req, res) => {
+  const msg = String(req.body.message || '').slice(0, 300).toLowerCase();
+  if (!msg) return res.status(400).json({ success: false, message: 'Pesan kosong' });
+  // Modular AI integration: aktif hanya jika GA_AI_KEY diset di environment (tidak pernah di frontend)
+  if (process.env.GA_AI_KEY && process.env.GA_AI_URL) {
+    try {
+      const r = await fetch(process.env.GA_AI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GA_AI_KEY },
+        body: JSON.stringify({ model: process.env.GA_AI_MODEL || 'llama-3.1-8b-instant', messages: [
+          { role: 'system', content: 'Kamu Green Assistant, asisten informasi lingkungan GreenAction. Jawab singkat, akurat, bahasa Indonesia. Jangan mengarang statistik. Jika di luar topik lingkungan atau GreenAction, arahkan kembali dengan sopan.' },
+          { role: 'user', content: req.body.message }] })
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const reply = j.choices?.[0]?.message?.content;
+        if (reply) return res.json({ success: true, reply: String(reply).slice(0, 1000), mode: 'ai' });
+      }
+    } catch (e) { /* fallback ke KB di bawah */ }
+  }
+  // Fallback: knowledge base terkurasi (bukan klaim AI)
+  const hit = KB.find(e => e.k.some(k => msg.includes(k)));
+  const reply = hit ? hit.a : 'Saya bisa bantu topik: pemilahan sampah, kompos, hemat air & listrik, plastik, energi terbarukan, reboisasi, Eco Challenge, Green Map, cara ikut kegiatan, dan cara melapor. Coba salah satu topik itu atau lihat Eco Academy untuk materi lengkap.';
+  res.json({ success: true, reply, mode: 'kb' });
+});
+
 api.get('/me', requireAuth, (req, res) => {
   const users = getDB('users.json', []);
   const u = users.find(x => x.id === req.session.userId);
@@ -392,7 +546,7 @@ api.get('/admin/data', requireAdmin, (req, res) => {
   const joins = getDB('joinreqs.json', []).map(j => ({ ...j, title: (j.type === 'campaign' ? getDB('campaigns.json', []).find(c => c.id === j.id) : getDB('activities.json', []).find(a => a.id === j.id))?.judul || j.id, userName: (users.find(u => u.id === j.userId) || {}).nama || '—' }));
   res.json({ success: true, stats: { users: users.length, reports: reports.length, pending: reports.filter(r => r.status === 'Submitted' || r.status === 'Under Review').length, joins: joins.filter(j => j.status === 'Pending').length }, reports, byStatus, joins, users: users.map(({ password, ...u }) => u) });
 });
-['kampanye','kegiatan','komunitas','green-map','tantangan','lapor','dampak','edukasi','papan-peringkat','tentang','masuk','daftar','dashboard','profil','admin','artikel'].forEach(p => {
+['kampanye','kegiatan','komunitas','green-map','tantangan','lapor','dampak','edukasi','papan-peringkat','tentang','masuk','daftar','dashboard','profil','admin','artikel','monitor','dashboard-lingkungan','timeline','academy','assistant','privacy','terms','faq','kontak','privasi','ketentuan'].forEach(p => {
   app.get('/' + p, (req, res) => res.sendFile(path.join(__dirname, 'public', p + '.html')));
 });
 // kampanye detail /kampanye/:id → kampanye-detail.html

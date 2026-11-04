@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indonesia Green Monitor — GreenAction</title>
+<meta name="description" content="Peta interaktif kepulauan Indonesia untuk menjelajahi kegiatan, laporan, dan komunitas lingkungan — mode 2D dan 3D.">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0 20px">
+  <div class="container-wide">
+    <div class="sec-head">
+      <div class="kicker">Indonesia Green Monitor</div>
+      <h2>Jelajahi Lingkungan Indonesia</h2>
+      <p>Peta interaktif kepulauan Indonesia: kegiatan lingkungan, laporan warga, dan komunitas — dengan mode tampilan 2D dan 3D. Titik lokasi adalah dataset demo yang ditandai.</p>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+      <div class="mode-toggle" role="tablist" aria-label="Mode peta">
+        <button id="btn2d" class="active" role="tab" aria-selected="true">2D</button>
+        <button id="btn3d" role="tab" aria-selected="false">3D</button>
+      </div>
+      <input id="search" type="search" placeholder="Cari lokasi, provinsi, atau pulau…" aria-label="Pencarian lokasi" style="flex:1;min-width:220px;padding:11px 16px;border:1.5px solid var(--line);border-radius:12px">
+    </div>
+
+    <div class="monitor-layout">
+      <div class="monitor-map-wrap">
+        <div id="map" role="application" aria-label="Peta lingkungan Indonesia"></div>
+        <div class="map-legend" aria-label="Legenda kategori">
+          <b>Legenda</b>
+          <div id="legendItems"></div>
+        </div>
+        <div id="globeFallback" class="globe-fallback" hidden>
+          <p>Mode 3D tidak didukung perangkat/browser ini. Melanjutkan dengan mode 2D.</p>
+        </div>
+      </div>
+      <aside class="monitor-side">
+        <div class="panel" style="margin:0">
+          <h3 style="font-size:1rem">Filter Kategori</h3>
+          <div id="filters" class="map-filters" style="margin:10px 0"></div>
+          <h3 style="font-size:1rem;margin-top:18px">Navigasi Cepat</h3>
+          <div id="islands" class="island-nav"></div>
+          <h3 style="font-size:1rem;margin-top:18px">Detail Wilayah</h3>
+          <div id="provinceDetail" style="font-size:.9rem;color:var(--mut)">Pilih titik di peta atau provinsi di navigasi untuk melihat ringkasan wilayah.</div>
+        </div>
+      </aside>
+    </div>
+    <p style="font-size:.78rem;color:var(--mut);margin-top:12px">Batas wilayah & peta dasar © OpenStreetMap contributors · Tampilan 3D: MapLibre GL JS · Titik lokasi & statistik wilayah adalah <b>dataset demo</b> GreenAction.</p>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('monitor');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+
+const CAT_COLORS = {
+  'Reforestation':'#123C2B','Waste Management':'#237A50','Plastic Reduction':'#65A77B',
+  'Ocean Conservation':'#2B4C8C','Clean Energy':'#8A6410','Biodiversity':'#3E7C59',
+  'Water Conservation':'#4A7FA5','Community Activities':'#7C5CA6','Environmental Reports':'#A33A32'
+};
+const FILTERS = Object.keys(CAT_COLORS);
+let allPoints=[], activeFilter='Semua', mode='2d', leafMap=null, globeMap=null, markersLayer=null;
+
+// legend
+document.getElementById('legendItems').innerHTML = FILTERS.map(f=>`<div class="lg-item"><i style="background:${CAT_COLORS[f]}"></i>${f}</div>`).join('');
+// filters
+document.getElementById('filters').innerHTML = ['Semua',...FILTERS].map(f=>`<button class="chip ${f==='Semua'?'active':''}" data-f="${f}">${f}</button>`).join('');
+document.getElementById('filters').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('#filters .chip').forEach(c=>c.classList.remove('active'));
+  b.classList.add('active'); activeFilter=b.dataset.f; drawPoints();
+});
+
+// islands quick nav (koordinat pusat pulau — umum & dapat diverifikasi di peta dunia)
+const ISLANDS = {
+  'Sumatra': [ -0.6, 101.5 ], 'Jawa': [-7.3, 109.5], 'Kalimantan': [0.5, 114.0],
+  'Sulawesi': [-2.0, 120.5], 'Bali & Nusa Tenggara': [-8.4, 118.5], 'Maluku & Papua': [-4.0, 137.5]
+};
+document.getElementById('islands').innerHTML = Object.entries(ISLANDS).map(([n,c])=>`<button class="chip" data-c="${c.join(',')}">${n}</button>`).join('');
+document.getElementById('islands').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  const [lat,lng]=b.dataset.c.split(',').map(Number);
+  if(mode==='3d' && globeMap) globeMap.flyTo({center:[lng,lat], zoom:4.6});
+  else if(leafMap) leafMap.flyTo([lat,lng], 6);
+});
+
+// ===== 2D map =====
+function init2D(){
+  leafMap = L.map('map',{center:[-2.2,117.5],zoom:5,scrollWheelZoom:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(leafMap);
+  markersLayer = L.layerGroup().addTo(leafMap);
+  drawPoints();
+}
+function drawPoints(){
+  if(!markersLayer) return;
+  markersLayer.clearLayers();
+  const q=document.getElementById('search').value.toLowerCase();
+  allPoints.filter(p=>(activeFilter==='Semua'||p.kategori===activeFilter) && (!q || (p.nama+p.alamat+p.provinsi).toLowerCase().includes(q)))
+  .forEach(p=>{
+    const icon=L.divIcon({className:'',html:`<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${CAT_COLORS[p.kategori]||'#237A50'};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>`,iconSize:[20,20],iconAnchor:[10,20]});
+    const m=L.marker([p.lat,p.lng],{icon}).addTo(markersLayer)
+      .bindPopup(`<b>${GA.esc(p.nama)}</b><br><span style="color:#237A50;font-size:.8rem;font-weight:700">${GA.esc(p.kategori)}</span><br><span style="font-size:.8rem">${GA.esc(p.alamat)}, ${GA.esc(p.provinsi)}</span><br><a href="#" onclick="showProvince('${GA.esc(p.provinsi)}');return false" style="font-size:.8rem;color:#123C2B;font-weight:700">Detail wilayah →</a>`);
+    m.on('click',()=>showProvince(p.provinsi));
+  });
+}
+document.getElementById('search').addEventListener('input',()=>{ drawPoints(); });
+
+// ===== Province detail =====
+async function showProvince(prov){
+  document.querySelectorAll('.island-nav .chip').forEach(()=>{});
+  const d=await GA.api('/monitor/province?prov='+encodeURIComponent(prov));
+  const s=d.stats;
+  const recent=(d.terbaru||[]).slice(0,4).map(t=>`<li style="margin-bottom:6px">◆ ${GA.esc(t.nama)} <span style="color:var(--mut);font-size:.75rem">· ${GA.esc(t.kategori)}</span></li>`).join('');
+  document.getElementById('provinceDetail').innerHTML=`
+    <b style="color:var(--deep);font-size:1.05rem">${GA.esc(prov)}</b>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">
+      <div style="background:var(--mint);border-radius:10px;padding:10px"><b>${s.kampanye}</b><div style="font-size:.72rem">Kampanye</div></div>
+      <div style="background:var(--mint);border-radius:10px;padding:10px"><b>${s.komunitas}</b><div style="font-size:.72rem">Komunitas</div></div>
+      <div style="background:var(--mint);border-radius:10px;padding:10px"><b>${s.aktivitas}</b><div style="font-size:.72rem">Aktivitas</div></div>
+      <div style="background:var(--mint);border-radius:10px;padding:10px"><b>${s.laporan}</b><div style="font-size:.72rem">Laporan</div></div>
+    </div>
+    <div style="font-size:.8rem;margin-bottom:6px">Dampak terverifikasi: <b>${GA.fmt(s.pohon)} pohon</b> · <b>${GA.fmt(s.sampah)} kg</b> sampah <span style="color:var(--mut)">(demo)</span></div>
+    <b style="font-size:.85rem">Aktivitas terbaru:</b><ul style="padding-left:16px;font-size:.85rem">${recent||'<li>—</li>'}</ul>`;
+}
+window.showProvince=showProvince;
+
+// ===== 3D mode (MapLibre globe, lazy init) =====
+const btn2d=document.getElementById('btn2d'), btn3d=document.getElementById('btn3d');
+btn3d.addEventListener('click',()=>{
+  try{
+    if(typeof maplibregl === 'undefined' || !maplibregl.Map){ throw new Error('unsupported'); }
+    if(!globeMap){
+      globeMap = new maplibregl.Map({
+        container:'map', style:'https://demotiles.maplibre.org/style.json',
+        center:[117.5,-2.2], zoom:3.6, pitch:0, maxPitch:70
+      });
+      globeMap.addControl(new maplibregl.NavigationControl({visualizePitch:true}));
+      globeMap.on('load',()=>addGlobePoints());
+    }
+    document.getElementById('map').style.display='block';
+    if(leafMap) leafMap.remove(), leafMap=null, markersLayer=null;
+    mode='3d'; btn3d.classList.add('active'); btn2d.classList.remove('active');
+    btn2d.setAttribute('aria-selected','false'); btn3d.setAttribute('aria-selected','true');
+    document.getElementById('globeFallback').hidden=true;
+  }catch(e){
+    document.getElementById('globeFallback').hidden=false;
+    setTimeout(()=>{document.getElementById('globeFallback').hidden=true;},3500);
+  }
+});
+btn2d.addEventListener('click',()=>{
+  if(globeMap){ globeMap.remove(); globeMap=null; }
+  init2D();
+  mode='2d'; btn2d.classList.add('active'); btn3d.classList.remove('active');
+  btn2d.setAttribute('aria-selected','true'); btn3d.setAttribute('aria-selected','false');
+});
+function addGlobePoints(){
+  if(!globeMap) return;
+  const feats = allPoints.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{nama:p.nama,kategori:p.kategori,alamat:p.alamat,provinsi:p.provinsi}}));
+  if(globeMap.getSource('ga-points')) globeMap.getSource('ga-points').setData({type:'FeatureCollection',features:feats});
+  else {
+    globeMap.addSource('ga-points',{type:'geojson',data:{type:'FeatureCollection',features:feats}});
+    globeMap.addLayer({id:'ga-circles',type:'circle',source:'ga-points',paint:{'circle-radius':7,'circle-color':['get',['get','kategori'],['literal',CAT_COLORS]],'circle-stroke-width':2,'circle-stroke-color':'#fff'}});
+  }
+  globeMap.on('click','ga-circles',e=>{
+    const p=e.features[0].properties;
+    new maplibregl.Popup().setLngLat(e.lngLat)
+      .setHTML(`<b>${GA.esc(p.nama)}</b><br><span style="font-size:.8rem;color:#237A50;font-weight:700">${GA.esc(p.kategori)}</span><br><span style="font-size:.8rem">${GA.esc(p.alamat)}, ${GA.esc(p.provinsi)}</span>`)
+      .addTo(globeMap);
+    showProvince(p.provinsi);
+  });
+}
+
+// init
+GA.api('/mappoints').then(d=>{ allPoints=d.items.map(p=>({...p, provinsi:p.provinsi||p.lokasi||'—'})); init2D(); showProvince('Jawa Barat'); });
+</script>
+</body>
+</html>

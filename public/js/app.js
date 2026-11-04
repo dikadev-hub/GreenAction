@@ -34,10 +34,14 @@ window.GA = (function(){
           <a href="/kampanye" class="${active==='kampanye'?'active':''}">Kampanye</a>
           <a href="/kegiatan" class="${active==='kegiatan'?'active':''}">Kegiatan</a>
           <a href="/komunitas" class="${active==='komunitas'?'active':''}">Komunitas</a>
+          <a href="/monitor" class="${active==='monitor'?'active':''}">Green Monitor</a>
           <a href="/green-map" class="${active==='map'?'active':''}">Green Map</a>
+          <a href="/dashboard-lingkungan" class="${active==='dashboard'?'active':''}">Dashboard</a>
           <a href="/dampak" class="${active==='dampak'?'active':''}">Dampak</a>
-          <a href="/edukasi" class="${active==='edukasi'?'active':''}">Edukasi</a>
+          <a href="/academy" class="${active==='academy'?'active':''}">Eco Academy</a>
+          <a href="/assistant" class="${active==='assistant'?'active':''}">Green Assistant</a>
           <a href="/papan-peringkat" class="${active==='leaderboard'?'active':''}">Leaderboard</a>
+          <a href="/timeline" class="${active==='timeline'?'active':''}">Timeline</a>
           <a href="/tentang" class="${active==='tentang'?'active':''}">Tentang</a>
         </nav>
         <div class="nav-actions">

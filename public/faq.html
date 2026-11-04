@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0"><div class="container-sm" id="c"></div></section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+const FAQ=[
+ ['Apa itu GreenAction?','GreenAction adalah platform digital untuk mendukung gerakan lingkungan di Indonesia: menemukan kegiatan, bergabung dengan komunitas, melaporkan masalah lingkungan, belajar di Eco Academy, dan mencatat kontribusi.'],
+ ['Apakah gratis?','Ya. Mendaftar dan menggunakan seluruh fitur GreenAction tidak dikenakan biaya.'],
+ ['Bagaimana cara ikut kegiatan?','Login, buka halaman Kegiatan, pilih kegiatan yang tersedia, lalu klik "Daftar Jadi Peserta". Pendaftaran berstatus Pending sampai disetujui penyelenggara/admin.'],
+ ['Apa yang terjadi setelah saya melapor?','Laporan berstatus Submitted, lalu diverifikasi tim (Under Review → Verified). Setelah terverifikasi, laporan dapat ditindaklanjuti (In Progress → Resolved) atau ditolak bila tidak memenuhi kriteria.'],
+ ['Apa bedanya poin dan dampak terverifikasi?','Poin mencatat partisipasimu di platform (ikut kegiatan, tantangan). Dampak terverifikasi (misal jumlah pohon, sampah terkumpul) dicatat terpisah dan hanya berasal dari kegiatan yang telah diverifikasi.'],
+ ['Apakah statistik di situs ini data nyata?','Sebagian statistik dan kampanye adalah dataset demo yang ditandai secara jelas. Laporan dan akun yang kamu buat adalah data nyata.'],
+ ['Bagaimana cara menemukan kegiatan di dekat saya?','Gunakan Green Map atau halaman Kegiatan, filter berdasarkan lokasi/kategori, atau tanyakan pada Green Assistant.'],
+];
+document.getElementById('c').innerHTML=`
+<span class="tag green">Bantuan</span>
+<h1 style="color:var(--deep);font-size:1.9rem;margin:16px 0">Pertanyaan Umum (FAQ)</h1>
+<div style="display:grid;gap:12px;margin-top:24px">
+${FAQ.map(([q,a])=>`<details class="panel" style="margin:0;cursor:pointer"><summary style="font-weight:700;color:var(--deep)">${q}</summary><p style="color:var(--mut);margin-top:10px">${a}</p></details>`).join('')}
+</div>`;
+</script>
+</body>
+</html>

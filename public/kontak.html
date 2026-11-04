@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kontak — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0"><div class="container-sm" id="c"></div></section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+document.getElementById('c').innerHTML=`
+<span class="tag green">Kontak</span>
+<h1 style="color:var(--deep);font-size:1.9rem;margin:16px 0">Hubungi GreenAction</h1>
+<p style="color:var(--mut)">Kami tidak mencantumkan alamat atau nomor telepon kantor karena belum ada kantor fisik resmi. Saluran resmi GreenAction saat ini:</p>
+<div style="display:grid;gap:14px;margin-top:24px">
+  <div class="panel" style="margin:0"><b>Green Assistant</b><p style="color:var(--mut);font-size:.9rem;margin-top:4px">Pertanyaan umum & panduan platform — tersedia 24/7 di menu <a href="/assistant" style="color:var(--green);font-weight:700">Green Assistant</a>.</p></div>
+  <div class="panel" style="margin:0"><b>FAQ</b><p style="color:var(--mut);font-size:.9rem;margin-top:4px">Jawaban pertanyaan yang sering ditanyakan: <a href="/faq" style="color:var(--green);font-weight:700">halaman FAQ</a>.</p></div>
+  <div class="panel" style="margin:0"><b>Laporan lingkungan</b><p style="color:var(--mut);font-size:.9rem;margin-top:4px">Bukan pertanyaan — melainkan laporan masalah lingkungan? Gunakan <a href="/lapor" style="color:var(--green);font-weight:700">formulir Lapor</a>, bukan halaman ini.</p></div>
+</div>`;
+</script>
+</body>
+</html>

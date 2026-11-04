@@ -45,11 +45,17 @@ Platform ini menjawab 7 masalah:
 | Fitur | Status | Keterangan |
 |---|---|---|
 | Homepage | ✅ Jalan | Hero, statistik (demo), pillars, CTA |
+| Indonesia Green Monitor | ✅ Jalan | Peta Indonesia interaktif mode **2D (Leaflet/OSM) & 3D (MapLibre GL)**, filter 9 kategori, pencarian, navigasi antarpulau, detail wilayah per provinsi |
+| Environmental Dashboard | ✅ Jalan | Statistik nasional + filter periode (7 hari/30 hari/3 bulan/1 tahun) + klasifikasi data (terverifikasi vs menunggu verifikasi vs demo) |
+| Impact Timeline | ✅ Jalan | Kronologi perkembangan platform, berlabel demo |
 | Campaign Management | ✅ Jalan | Direktori + detail + search/filter/sort + save/bookmark |
 | Activities & Volunteer | ✅ Jalan | Katalog kegiatan + kuota + pendaftaran (approval) |
 | Community Directory | ✅ Jalan | Profil komunitas terverifikasi + kegiatan terkait |
 | Green Map | ✅ Jalan | Leaflet + OSM, filter 7 kategori titik |
 | Eco Challenge | ✅ Jalan | 6 tantangan, progress harian, streak, poin |
+| Eco Academy | ✅ Jalan | Materi edukasi per kategori + **kuis interaktif** (+5 poin, tersimpan) |
+| Green Assistant | ✅ Jalan | Asisten informasi lingkungan — knowledge base terkurasi; integrasi AI modular aktif via env `GA_AI_KEY`/`GA_AI_URL` (fallback jujur, tanpa klaim palsu) |
+| Notification System | ✅ Jalan | Notifikasi status join/laporan/quiz + mark read & mark all read |
 | Environmental Reporting | ✅ Jalan | Form + upload foto (maks 2MB) + alur status 6 tahap |
 | Impact Analytics | ✅ Jalan | Chart.js — 4 grafik, berlabel data demo |
 | User Dashboard | ✅ Jalan | KPI, grafik, riwayat join & laporan, tantangan |
@@ -57,6 +63,7 @@ Platform ini menjawab 7 masalah:
 | Admin Dashboard | ✅ Jalan | Stats, antrian verifikasi laporan, approval join, daftar user |
 | Leaderboard | ✅ Jalan | Ranking poin relawan |
 | Education | ✅ Jalan | Artikel edukasi dengan sumber tercantum |
+| Info pages | ✅ Jalan | Privacy Policy, Terms of Service, FAQ, Contact (tanpa data kontak fiktif) |
 | Auth | ✅ Jalan | Register/login/logout, scrypt hash, session token |
 
 ## 6. Screenshots

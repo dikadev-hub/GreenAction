@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Academy — GreenAction</title>
+<meta name="description" content="Pusat edukasi lingkungan GreenAction: artikel, materi pembelajaran, dan kuis dengan sumber yang dapat dipertanggungjawabkan.">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0 24px">
+  <div class="container">
+    <div class="sec-head">
+      <div class="kicker">Eco Academy</div>
+      <h2>Pusat Edukasi Lingkungan</h2>
+      <p>Materi pembelajaran terstruktur dengan sumber yang dapat dipertanggungjawabkan. Uji pemahamanmu lewat kuis di akhir materi.</p>
+    </div>
+    <div class="map-filters" id="cats">
+      <button class="chip active" data-c="Semua">Semua</button>
+    </div>
+    <div class="grid grid-3" id="list"></div>
+    <div class="panel" style="margin-top:32px">
+      <h3>Kuis Pemahaman</h3>
+      <p style="color:var(--mut);font-size:.9rem">Jawab kuis singkat untuk mengukur pemahamanmu. Skor tersimpan di profilmu.</p>
+      <div id="quizArea"></div>
+    </div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('academy');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+let articles=[], cat='Semua';
+GA.api('/academy').then(d=>{
+  articles=d.items;
+  const cats=[...new Set(articles.map(a=>a.kategori))];
+  document.getElementById('cats').insertAdjacentHTML('beforeend',cats.map(c=>`<button class="chip" data-c="${GA.esc(c)}">${GA.esc(c)}</button>`).join(''));
+  render();
+});
+document.getElementById('cats').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('#cats .chip').forEach(c=>c.classList.remove('active'));
+  b.classList.add('active'); cat=b.dataset.c; render();
+});
+function render(){
+  document.getElementById('list').innerHTML=articles.filter(a=>cat==='Semua'||a.kategori===cat).map(a=>`
+    <article class="card">
+      <img class="thumb" src="${a.foto}" alt="${GA.esc(a.judul)}" loading="lazy">
+      <div class="body">
+        <span class="tag green">${GA.esc(a.kategori)}</span>
+        <h3 style="margin-top:10px">${GA.esc(a.judul)}</h3>
+        <p class="desc">${GA.esc(a.ringkas)}</p>
+        <div class="meta"><span>${a.menit} menit baca</span><span>${a.tanggal}</span></div>
+        <div class="foot"><a class="btn btn-outline btn-sm" href="/artikel/${a.id}">Pelajari</a>
+        <button class="btn btn-sm btn-outline" onclick="quiz('${a.id}')">Kuis</button></div>
+      </div>
+    </article>`).join('')||'<p style="color:var(--mut)">Belum ada materi untuk kategori ini.</p>';
+}
+async function quiz(aid){
+  const d=await GA.api('/quiz/'+aid);
+  if(!d.success||!d.quiz){ GA.toast('Kuis untuk materi ini belum tersedia'); return; }
+  const q=d.quiz;
+  document.getElementById('quizArea').innerHTML=`
+    <b>${GA.esc(q.pertanyaan)}</b>
+    <div style="display:grid;gap:8px;margin-top:14px" id="opts">
+      ${q.pilihan.map((o,i)=>`<button class="chip" style="text-align:left;padding:12px 16px" data-i="${i}">${GA.esc(o)}</button>`).join('')}
+    </div><div id="quizResult" style="margin-top:12px"></div>`;
+  document.getElementById('opts').addEventListener('click',async e=>{
+    const b=e.target.closest('button[data-i]'); if(!b)return;
+    const r=await GA.api('/quiz/'+aid+'/answer',{method:'POST',body:JSON.stringify({jawaban:Number(b.dataset.i)})});
+    document.getElementById('quizResult').innerHTML=r.success
+      ? (r.benar?'<div class="form-ok">Benar! '+GA.esc(r.penjelasan)+'</div>':'<div class="form-error">Kurang tepat. '+GA.esc(r.penjelasan)+'</div>')
+      : '<div class="form-error">'+GA.esc(r.message||'Gagal')+'</div>';
+  });
+}
+</script>
+</body>
+</html>

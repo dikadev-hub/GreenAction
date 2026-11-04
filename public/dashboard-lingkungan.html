@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Environmental Dashboard — GreenAction</title>
+<meta name="description" content="Dashboard statistik lingkungan GreenAction: tren kegiatan, kategori kampanye, dan persebaran wilayah. Data demo ditandai secara jelas.">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0 24px">
+  <div class="container-wide">
+    <div class="sec-head">
+      <div class="kicker">Environmental Dashboard</div>
+      <h2>Statistik Lingkungan Nasional</h2>
+      <p>Ringkasan aktivitas platform dalam periode terpilih. Dashboard ini <b>bukan pemantauan real-time</b> — data diperbarui berkala dari kegiatan terverifikasi dan laporan warga.</p>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:26px">
+      <b style="font-size:.9rem;color:var(--mut)">Periode:</b>
+      <div class="mode-toggle" id="periods" role="tablist" aria-label="Filter periode">
+        <button data-p="7" role="tab">7 hari</button>
+        <button data-p="30" class="active" role="tab" aria-selected="true">30 hari</button>
+        <button data-p="90" role="tab">3 bulan</button>
+        <button data-p="365" role="tab">1 tahun</button>
+      </div>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px" id="kpi"></div>
+    <div class="data-source-note">
+      <b>Klasifikasi data:</b>
+      <span class="pill pill-green">Terverifikasi</span> dampak yang sudah diverifikasi tim ·
+      <span class="pill pill-warn">Menunggu verifikasi</span> laporan & kegiatan belum diproses ·
+      <span class="pill">Data demo</span> dataset demonstrasi yang ditandai
+    </div>
+    <div class="chart-grid" style="grid-template-columns:1fr 1fr">
+      <div class="chart-box"><h3>Tren Kegiatan <span id="periodLbl" class="tag"></span></h3><canvas id="ch1" height="230"></canvas><div class="src">Sumber: dataset demo GreenAction</div></div>
+      <div class="chart-box"><h3>Kategori Kampanye</h3><canvas id="ch2" height="230"></canvas><div class="src">Sumber: dataset demo GreenAction</div></div>
+      <div class="chart-box"><h3>Persebaran Kegiatan per Wilayah</h3><canvas id="ch3" height="230"></canvas><div class="src">Sumber: dataset demo GreenAction</div></div>
+      <div class="chart-box"><h3>Hasil Terverifikasi vs Menunggu Verifikasi</h3><canvas id="ch4" height="230"></canvas><div class="src">Sumber: laporan warga & data demo (dipisahkan)</div></div>
+    </div>
+    <div class="panel" style="margin-top:24px"><h3>Aktivitas Terbaru</h3><div id="recent"></div></div>
+  </div>
+</section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML('dashboard');
+document.getElementById('footer').innerHTML=GA.footerHTML();
+Chart.defaults.font.family="'Manrope',sans-serif";
+const GREEN='#237A50',DEEP='#123C2B',FRESH='#65A77B',WARN='#8A6410';
+const charts={};
+const SERIES = {
+  7:  {labels:['Sen','Sel','Rab','Kam','Jum','Sab','Min'], kegiatan:[2,3,1,4,3,6,5], relawan:[24,31,18,42,37,66,58]},
+  30: {labels:['Mgg 1','Mgg 2','Mgg 3','Mgg 4'], kegiatan:[12,15,18,21], relawan:[180,220,260,310]},
+  90: {labels:['Bulan 1','Bulan 2','Bulan 3'], kegiatan:[48,62,74], relawan:[620,810,940]},
+  365:{labels:['Q1','Q2','Q3','Q4'], kegiatan:[130,175,205,240], relawan:[980,1450,1900,2400]}
+};
+function renderKPI(s){
+  document.getElementById('kpi').innerHTML=[
+    ['Pohon Ditanam',GA.fmt(s.trees),'pill-green','Terverifikasi + demo'],
+    ['Sampah Terkumpul (kg)',GA.fmt(s.waste),'pill-green','Terverifikasi + demo'],
+    ['Relawan Berpartisipasi',GA.fmt(s.volunteers),'','Data demo'],
+    ['Kegiatan',GA.fmt(s.activities),'','Data demo']
+  ].map(([l,v,pill,note])=>`<div class="panel" style="margin:0"><b style="font-size:1.5rem;color:var(--deep)">${v}</b><div style="font-size:.85rem;color:var(--mut)">${l}</div><span class="pill ${pill}" style="font-size:.68rem;margin-top:6px;display:inline-block">${note}</span></div>`).join('');
+}
+function renderChart(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),cfg); }
+function loadDashboard(period){
+  Promise.all([GA.api('/stats'),GA.api('/dashboard?periode='+period)]).then(([a,b])=>{
+    renderKPI(a.stats);
+    const s=SERIES[period]||SERIES[30];
+    document.getElementById('periodLbl').textContent={7:'7 hari',30:'30 hari',90:'3 bulan',365:'1 tahun'}[period];
+    renderChart('ch1',{type:'bar',data:{labels:s.labels,datasets:[
+      {label:'Kegiatan',data:s.kegiatan,backgroundColor:GREEN,borderRadius:8},
+      {label:'Relawan',data:s.relawan,backgroundColor:FRESH,borderRadius:8}]},
+      options:{scales:{y:{beginAtZero:true}}}});
+    renderChart('ch2',{type:'doughnut',data:{labels:b.kategori.map(k=>k.nama),datasets:[{data:b.kategori.map(k=>k.jumlah),backgroundColor:[DEEP,GREEN,FRESH,'#8FB49C','#2B4C8C','#8A6410','#4A7FA5','#7C5CA6'],borderWidth:0}]},options:{plugins:{legend:{position:'right'}}}});
+    renderChart('ch3',{type:'bar',data:{labels:b.wilayah.map(w=>w.nama),datasets:[{label:'Kegiatan',data:b.wilayah.map(w=>w.jumlah),backgroundColor:'#4A7FA5',borderRadius:8}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+    renderChart('ch4',{type:'bar',data:{labels:['Dampak terverifikasi','Menunggu verifikasi','Laporan warga (belum verifikasi)'],datasets:[{label:'Item',data:b.verifikasi,backgroundColor:[GREEN,WARN,'#A33A32'],borderRadius:8}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+    document.getElementById('recent').innerHTML=b.terbaru.map(t=>`
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem">
+        <div><b>${GA.esc(t.nama)}</b><div style="color:var(--mut);font-size:.78rem">${GA.esc(t.lokasi)} · ${GA.esc(t.kategori)}</div></div>
+        <span class="pill ${t.status==='Terverifikasi'?'pill-green':'pill-warn'}">${t.status}</span>
+      </div>`).join('');
+  });
+}
+document.getElementById('periods').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#periods button').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false');});
+  b.classList.add('active'); b.setAttribute('aria-selected','true');
+  loadDashboard(b.dataset.p);
+});
+loadDashboard(30);
+</script>
+</body>
+</html>

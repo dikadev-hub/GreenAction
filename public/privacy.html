@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — GreenAction</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="header"></div>
+<section style="padding:48px 0"><div class="container-sm" id="c"></div></section>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('header').innerHTML=GA.headerHTML();
+document.getElementById('footer').innerHTML=GA.footerHTML();
+document.getElementById('c').innerHTML=`
+<span class="tag green">Kebijakan</span>
+<h1 style="color:var(--deep);font-size:1.9rem;margin:16px 0">Privacy Policy</h1>
+<p style="color:var(--mut)">Terakhir diperbarui: 4 November 2026</p>
+<div style="display:grid;gap:18px;margin-top:24px;color:var(--ink);font-size:.95rem">
+<div><b>Data yang kami kumpulkan</b><p style="color:var(--mut)">GreenAction mengumpulkan nama, alamat email, dan lokasi (kota/provinsi) saat kamu mendaftar. Laporan lingkungan dapat menyertakan foto dan lokasi kejadian yang kamu berikan secara sukarela.</p></div>
+<div><b>Penggunaan data</b><p style="color:var(--mut)">Data digunakan untuk mengelola akun, memproses pendaftaran kegiatan, memverifikasi laporan, dan menampilkan agregat statistik partisipasi. Identitas pelapor laporan tidak ditampilkan secara publik.</p></div>
+<div><b>Keamanan</b><p style="color:var(--mut)">Password disimpan dalam bentuk hash (scrypt dengan salt unik). Komunikasi API menggunakan token sesi. Kami tidak pernah meminta password melalui email atau pesan.</p></div>
+<div><b>Cookie & penyimpanan lokal</b><p style="color:var(--mut)">Kami menggunakan penyimpanan lokal browser (localStorage) untuk menjaga sesi login. Kami tidak menjalankan iklan atau pelacak pihak ketiga.</p></div>
+<div><b>Hak kamu</b><p style="color:var(--mut)">Kamu dapat meminta penghapusan akun dan data terkait melalui halaman Contact.</p></div>
+<div><b>Data demo</b><p style="color:var(--mut)">Statistik, kampanye, dan titik peta yang ditandai "demo" adalah dataset demonstrasi — bukan data pengguna nyata.</p></div>
+</div>`;
+</script>
+</body>
+</html>
